@@ -1,0 +1,212 @@
+the code :
+resume_files = [
+    "/kaggle/input/test-res-1b/Resume DS.pdf",
+    "/kaggle/input/test-res222/Bharath_Resume.pdf",
+    "/kaggle/input/test-res222/John_Doe_Resume.pdf",
+    "/kaggle/input/test-res222/John_Doe_Resume_With_Experience.pdf",
+    "/kaggle/input/test-res222/Mahikshith_final_end_resume-2-1.pdf"
+]
+
+from langchain.document_loaders import PyPDFLoader
+from langchain.prompts import ChatPromptTemplate
+from langchain.llms import HuggingFacePipeline
+import json
+
+def extract_pdf_text(file_path: str) -> str:
+    """
+    Extracts text from a PDF file and returns it as a single string.
+
+    Args:
+        file_path (str): The path to the PDF file to be processed.
+
+    Returns:
+        str: The concatenated text from all pages of the PDF.
+    """
+    loader = PyPDFLoader(file_path)
+    documents = loader.load()
+    extracted_text = "\n".join(doc.page_content for doc in documents)
+    return extracted_text
+
+def restructure_json(input_data):
+    name = input_data.get("Contact Information", {}).get("Name", "Name not provided")
+    education_data = input_data.get("Education", {})
+    education = []
+    if education_data:
+        degree = education_data.get("Degree", "Degree not specified")
+        field = education_data.get("Field of Study", "Field of Study not specified")
+        institution = education_data.get("Institution Name", "Institution not specified")
+        graduation_date = education_data.get("Graduation Date", "Graduation Date not specified")
+        education.append(f"- {degree} in {field}, {institution}, {graduation_date}")
+
+    skills_data = input_data.get("Skills", {})
+    skills = []
+    for key in [
+        "Programming Languages",
+        "Technologies/Tools/frameworks",
+        "Machine Learning",
+        "Database Management",
+        "Technical Skills",
+        "Soft Skills"
+    ]:
+        skills.extend(skills_data.get(key, []))
+
+    experience_data = input_data.get("Experience", {})
+    experience = []
+    job_title = experience_data.get("Job Title")
+    if job_title:
+        company = experience_data.get("Company Name", "Company not specified")
+        dates = experience_data.get("Dates of Employment", "Dates not specified")
+        responsibilities = experience_data.get("Responsibilities/Projects", "Responsibilities not specified")
+        experience.append(f"- {job_title} at {company} ({dates})\n  {responsibilities}")
+    else:
+        experience.append("- (No job experience listed yet)")
+
+    projects_data = input_data.get("Projects", {})
+    project_titles = projects_data.get("Project Title", [])
+    project_descriptions = projects_data.get("Description/Technologies Used", [])
+    projects = [
+        f"- {title}: {desc}" for title, desc in zip(project_titles, project_descriptions)
+    ]
+
+    certifications = [
+        f"- {cert}" for cert in input_data.get("Additional Information", {}).get("Certifications", [])
+    ]
+
+    return {
+        "Name": name,
+        "Education": education,
+        "Skills": skills,
+        "Experience": experience,
+        "Projects": projects,
+        "Certifications": certifications
+    }
+
+# Initialize LLM
+pipe = pipeline(
+    task,
+    model=model,
+    tokenizer=tokenizer,
+    max_new_tokens=512,
+)  # Replace with the Hugging Face pipeline object
+llm = HuggingFacePipeline(pipeline=pipe)
+
+# List to hold restructured resumes
+restructured_resumes = []
+
+for file_path in resume_files:
+    try:
+        # Extract text from the current PDF
+        context = extract_pdf_text(file_path)
+
+        # Prepare the prompt
+        system_prompt = """You are tasked with parsing a resume. Your objective is to extract relevant information and provide it in a valid structured 'JSON' format. Ensure that the output is a properly formatted JSON object with correct syntax, including quotes around all keys and values, and no trailing commas. Do not include explanations, preambles, or any content outside of the structured JSON. If a value is missing, use null or an empty string "" instead of omitting the key. Ensure the JSON can be parsed without errors.
+        """
+        
+        human_prompt = """
+                     **Task:** Extract key information from the following resume text, especially Skills, Experience, Education.Do not any extra informaton
+        
+                    **Resume Text:**
+                    {context}
+        
+                    **Instructions:**
+                    Please extract the following information and format it in a clear structure as below, assure 
+                    to maintain these fields intact Skills, Experience, Education, do not change the case to lower, 
+                    :
+        
+                    1. **Contact Information:**
+                    - Name:
+                    - Email:
+                    - Phone Number:
+                    - Website/Portfolio/LinkedIn:
+                    - Github Profile:
+        
+                    2. **Education:**
+                    - Institution Name:
+                    - Degree:
+                    - Field of Study:
+                    - Graduation Date:
+        
+                    3. **Experience:**
+                    - Job Title:
+                    - Company Name:
+                    - Location:
+                    - Dates of Employment:
+                    - Responsibilities/Projects:
+        
+                    4. **Projects:**
+                    - Project Title:
+                    - Description/Technologies Used:
+                    - Outcomes/Results:
+        
+                    5. **Skills:**
+                    - Programming Languages:
+                    - Technologies/Tools/frameworks:
+        
+                    6. **Additional Information:** (if applicable)
+                    - Certifications:
+                    - Awards or Honors:
+                    - Professional Affiliations:
+                    - Languages:
+        
+                    **Question:**
+                    {question}
+        
+                    **Extracted Information:**
+                """
+        template = ChatPromptTemplate.from_messages(
+            [("system", system_prompt), ("human", human_prompt)]
+        )
+        complete_prompt = template.format_messages(context=context, question="Extract key information from this resume.")
+
+        # Get the response from the model
+        response = llm.invoke(complete_prompt, skip_prompt=True)
+
+        # Extract the JSON part from the response
+        valid_json_part = response.split("**Output:**")[0].strip()
+        response_dict = json.loads(valid_json_part)
+
+        # Restructure the JSON
+        restructured_resume = restructure_json(response_dict)
+        restructured_resumes.append(restructured_resume)
+
+    except Exception:
+        # print(f"Error processing file {file_path}: {e}")
+        # Attempt to clean and parse the response in case of an error
+        try:
+            # Remove unwanted portions and extract the JSON
+            # valid_json_part = response.split("**Output:**")[0].strip()
+            parsed_json = json.loads(valid_json_part)
+
+            # Pretty-print the valid JSON
+            print(json.dumps(parsed_json, indent=4))
+        except json.JSONDecodeError as e:
+            print("Error parsing JSON:", e)
+# Save all restructured resumes to a JSON file
+output_path = "/kaggle/working/restructured_resumes.json"
+with open(output_path, "w") as f:
+    json.dump(restructured_resumes, f, indent=4)
+
+print(f"Resumes saved to {output_path}")
+
+the error:
+"""Device set to use cuda:0
+<ipython-input-14-677002d172ee>:90: LangChainDeprecationWarning: The class HuggingFacePipeline was deprecated in LangChain 0.0.37 and will be removed in 1.0. An updated version of the class exists in the :class:~langchain-huggingface package and should be used instead. To use it run pip install -U :class:~langchain-huggingface and import as from :class:~langchain_huggingface import HuggingFacePipeline`.
+  llm = HuggingFacePipeline(pipeline=pipe)
+Setting pad_token_id to eos_token_id:128001 for open-end generation.
+Setting pad_token_id to eos_token_id:128001 for open-end generation.
+Error parsing JSON: Extra data: line 27 column 17 (char 1489)
+Setting pad_token_id to eos_token_id:128001 for open-end generation."""
+
+
+  My Undestading:
+  problem occurng on json parse line.
+  each context ouput from lllm is different and not properly json structres as check them indivodualy on " https://jsonlint.com/ "--here--
+  if i try to do the parsing for each indivial file seperatly then 
+     1.its time taking
+     2. Variable are not properly overwrting and givng prevous commit anwers ## i can improve --here--
+solution:
+ 1. may lies on sysytem prompt as it is what creatng jason string
+ 2. llm model --may be-- need to more quatised model for better faster response so i can experiment more with the code
+ 3. maybe on input pdf file--which i cant alter--!!!--
+
+continous ----
