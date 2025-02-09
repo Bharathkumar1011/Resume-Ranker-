@@ -1,0 +1,5 @@
+As i am trying to find the rankng for each resumes [which i got from each method as output] 
+Both for Regex and SpaCy i am able to write and excute the rnker code wtout any errors
+But as i move to rsume output which  got from llm models the errors starting pile up
+First llma resume ouptput which is in dictionary format but in eductaion and experience scton have nested dict() format 
+This nested dict() format resulting the error in sentence trndformer  
