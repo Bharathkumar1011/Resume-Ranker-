@@ -1,0 +1,31 @@
+while excutng the Resume_Rank_Groq.ipynb in kaggle notebook
+encountered key error
+below is the code snippet from rank_candidtes function from notebook
+
+ scores.append({
+            "Name": resume["Name"],
+            "Skill Score": skill_score,
+            "Experience Score": experience_score,
+            "Education Score": education_score,
+            "Keyword Match Score": keyword_match_score,
+            "Total Score": total_score
+        })
+
+from above snippet the error occured becuase of this line
+<<<<<<<<<<<" "Name": resume["Name"],">>>>>>>
+this line gave the error because of the input dctionrty file which 
+we parsed using groq llm 
+  "Contact Information": {
+    "Name": "Steve Sun",
+    "Email": "stevesun1245@gmail.com",
+    "Phone Number": "(123)456789",
+    "Website/Portfolio/LinkedIn": "linkedin.com/in/stevesun",
+    "Github Profile": null
+
+above the part of the dict() file input which is he source of the key error
+as our code line <<<<<<<<<<<" "Name": resume["Name"],">>>>>>>
+only append list of string but our grog input is dictionary so
+we need to modify the this line to also append or extrct the name from the dict() as well
+modified code line:
+<<<<<<<<"Name": resume.get("Name") or resume["Contact Information"]["Name"]>>>>>>>>
+thi will solve the error..

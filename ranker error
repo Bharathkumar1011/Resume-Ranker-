@@ -1,0 +1,114 @@
+As i am trying to find the rankng for each resumes [which i got from each method as output] 
+Both for Regex and SpaCy i am able to write and excute the rnker code wtout any errors
+But as i move to rsume output which  got from llm models the errors starting pile up
+First llma resume ouptput which is in dictionary format but in eductaion and experience scton have nested dict() format 
+This nested dict() format resulting the error in sentence transeformer  
+
+
+def normalize_text(data_list):
+    """
+    Combine a list of text entries into a single normalized text block.
+    """
+    return " ".join(data_list)
+"def normalize_text(data_list): this function jons the invidual key features into a joint string so 
+sentence transformer can do the excution effeclty"
+
+
+def rank_candidates(resumes, job_description, model):
+    """
+    Rank candidates based on similarity scores for skills, education, and experience.
+    """
+    scores = []
+
+    for resume in resumes:
+        # Normalize resume sections
+        skills_text = normalize_text(resume["Skills"])
+        experience_text = normalize_text(resume["Experience"])
+        education_text = normalize_text(resume["Education"])
+
+so the problem arised n for loop of ranked_candiate function 
+
+"
+       1 skills_text = normalize_text(resume["Skills"])
+       2 experience_text = normalize_text(resume["Experience"])
+       3 education_text = normalize_text(resume["Education"])
+"
+
+in bove 3 lines lies the source of error 
+As my llm parsed output is in dictionary format its key features like
+EDUCATION 
+EXPERIENCE  has got another list of dictionares in them 
+so the llm output was a "NESTED DICTIONARY"
+which caused the problem when "experience_text = normalize_text(resume["Experience"])"
+this line called upon as the normalize_text function expecting the "list of strings "
+Rather it got list of dictionaries which it cant excute as it was not defined in code of function while calling
+
+SO the problem is its acceptng only list of strngs but we need to change it so it also accepts the list of dictionries
+
+do to that
+def normalize_text(data):
+    """
+    Recursively extract and combine text from nested dictionaries and lists.
+    """
+    if isinstance(data, str):
+        return data
+    elif isinstance(data, list):
+        return " ".join(normalize_text(item) for item in data)
+    elif isinstance(data, dict):
+        return " ".join(normalize_text(value) for value in data.values())
+    else:
+        return str(data)
+
+change the normalize_text(): fuction to above 
+ as it checks for str, list and dict() to join
+
+then in ranked_candidte functon inside the for loop change the 3 lines to below 3 lines
+    for resume in resumes:
+        skills_text = normalize_text(resume.get("Skills", []))
+        print(skills_text)
+        experience_text = normalize_text(resume.get("Experience", {}))
+        education_text = normalize_text(resume.get("Education", {}))
+which taioler made for our nested dict() input format that accepts the list of dict() as well to join. 
+
+
+
+checked those 2 functions indivially out of code 
+
+def normalize_text(data):
+    """
+    Recursively extract and combine text from nested dictionaries and lists.
+    """
+    if isinstance(data, str):
+        return data
+    elif isinstance(data, list):
+        return " ".join(normalize_text(item) for item in data)
+    elif isinstance(data, dict):
+        return " ".join(normalize_text(value) for value in data.values())
+    else:
+        return str(data)
+    for resume in resumes:
+        skills_text = normalize_text(resume.get("Skills", []))
+        print(skills_text)
+        experience_text = normalize_text(resume.get("Experience", {}))
+        print(experience_text)
+        education_text = normalize_text(resume.get("Education", {}))
+output:
+
+Python Data Analysis Machine Learning Communication Deep Learning SQL AI Data Visualization Statistical Analysis Big Data Critical Thinking Storytelling
+DataNova Insights
+Data Scientist March 2021 – Present
+• Developed and deployed machine learning models to optimize customer retention, increasing
+engagement by 15%.
+• Conducted exploratory data analysis (EDA) and statistical testing to derive actionable business
+insights.
+• Built scalable ETL pipelines to process large datasets using Python and SQL.
+• Collaborated with cross-functional teams to improve decision-making through predictive analytics.
+Neural Sphere Labs
+Data Scientist June 2019 – December 2023
+• Designed and implemented deep learning models for image classification, improving accuracy by
+20%.
+• Automated data preprocessing and feature engineering workflows using Python and Pandas.
+• Created interactive dashboards in Power BI to visualize key performance indicators (KPIs).
+• Partnered with engineers to deploy ML models into production, ensuring seamless integration.
+
+so it worked .
