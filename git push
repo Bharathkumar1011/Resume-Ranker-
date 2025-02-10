@@ -1,0 +1,9 @@
+cp /path/to/your/python/file.py /path/to/your/repository/
+
+this line will copy the fle from one folder(e/d/c) to your repo
+
+always pull  git pull orgnmain
+
+add
+commit"
+push
