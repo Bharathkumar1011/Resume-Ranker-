@@ -1,0 +1,20 @@
+with open('resume_data.json', 'w') as json_file:
+    json.dump(output, json_file, indent=4)
+ouput = 
+{'Name': 'Steve Sun', 'Email': 'stevesun1245@gmail.com', 'Skills': ['Python', 'Data Analysis', 'Machine Learning', 
+  'Communication', 'Deep Learning', 'SQL', 'AI', 'Data Visualization', 'Statistical Analysis', 'Big Data', 'Critical Thinking',
+  'Storytelling'], 'Education': {'University': ['EDUCATION\nSkyline University'], 'Degree': ['Master of Science in Data Science'], 
+    'GPA': ['3.81 GPA'], 'Start Date': ['August 2018'], 'End Date': ['May 2020']},
+  'Experience': 'DataNova Insights\nData Scientist March 2021 – Present\n• Developed and deployed machine learning models to optimize customer retention, increasing\nengagement by 15%.\n• Conducted exploratory data analysis (EDA) and statistical testing to derive actionable business\ninsights.\n• Built scalable ETL pipelines to process large datasets using Python and SQL.\n• Collaborated with cross-functional teams to improve decision-making through predictive analytics.\nNeural Sphere Labs\nData Scientist June 2019 – December 2023\n• Designed and implemented deep learning models for image classification, improving accuracy by\n20%.\n• Automated data preprocessing and feature engineering workflows using Python and Pandas.\n• Created interactive dashboards in Power BI to visualize key performance indicators (KPIs).\n• Partnered with engineers to deploy ML models into production, ensuring seamless integration.'}
+
+this dictionary file will be saved as .json
+
+with open('resume_data.json', 'r') as json_file:
+    resume_data = json.load(json_file)
+
+# If the resume ranker expects a list of dictionaries, wrap the dictionary in a list
+resume_data_list = [resume_data]
+with this code you can acces the stores json file back to your ranker code
+
+reason: " this 2 code snippets will allow you to automate  save file output and gve this output as input process
+ratherthan manually caopy pasteing the parser output to resume rankr input
