@@ -1,0 +1,11 @@
+##this are the requiremts.txt file for parserank.py app
+langchain-community==0.0.1
+pdfplumber==0.10.3
+sentence-transformers==2.2.2
+matplotlib==3.8.0
+streamlit==1.28.0
+torch==2.1.0
+numpy==1.26.0
+
+#How to Install the Requirements
+# pip install -r Requirements.txt
